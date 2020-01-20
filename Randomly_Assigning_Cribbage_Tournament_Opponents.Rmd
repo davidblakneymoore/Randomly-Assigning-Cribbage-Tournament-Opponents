@@ -1,0 +1,323 @@
+---
+title: "GRAD 996.01 Final Project"
+author: "David Moore"
+date: "1/17/2020"
+output: html_document
+---
+
+# Randomly Assigning Opponents in the 2020 University of New Hampshire Campus-Wide Cribbage Tournament
+
+### Background Information
+
+I am one of the organizers of the University of New Hampshire's campus-wide cribbage tournament. The mission  of the cribbage tournament is 'to promote both vertical and horizontal integration by maximizing the number of matchups between people from different departments and of different ranks within the university'. The cribbage tournament motto is 'cribbage is a wonderful game that you can enjoy your entire life'. My goal for this tournament this year is to have over 100 people participate, so please help spread the word.
+
+During the first portion of the tournament, there will be a round robin round where all participants will play 3 games against 3 different opponents. Then, everyone with a winning record from that round will advance to a single-elimination playoff bracket.
+
+I plan to randomly assign opponents for the round robin round with the constraint that interdepartmental matchups are maximized. If possible, matchups between people of differing ranks will be maximized as well.
+
+Let's start with some example data.
+
+```{r}
+
+# Example data
+Participants <- c("Sam", "Joan", "Ben", "Bob", "Ann", "Dave")
+Departments <- c("Education", "History", "Chemistry", "Chemistry", "Biology", "Mathematics")
+Positions <- c("Lecturer", "Graduate Student", "Staff", "Post-Doc", "Associate Professor", "Associate Professor")
+Tournament <- data.frame(Participants, Departments, Positions)
+Tournament$Participants <- as.character(Tournament$Participants)
+Tournament$Departments <- as.character(Tournament$Departments)
+Tournament$Positions <- as.character(Tournament$Positions)
+Tournament
+
+```
+
+### Generating Matrices Depicting Possible Matchups
+
+To maximize matchups between people of both different departments and different ranks, we can create a matrix showing the possible matchups. We can also create matrices that depict possible matchups if the only constraint is that matchups must be interdepartmental or that depict all possible matchups.
+
+```{r}
+
+# The following code assigns opponents such that no one of the same position or from the same department will play each other.
+Matchup <- NULL
+Opponent_1 <- NULL
+Opponent_2 <- NULL
+Can_This_Matchup_Occur <- NULL
+Counter_1 <- 1
+for (i in seq_len(nrow(Tournament) - 1)) {
+  for (j in (i + 1):nrow(Tournament)) {
+    Matchup[Counter_1] <- paste(Tournament$Participants[i], "versus", Tournament$Participants[j])
+    Opponent_1[Counter_1] <- Tournament$Participants[i]
+    Opponent_2[Counter_1] <- Tournament$Participants[j]
+    if (Tournament$Departments[i] != Tournament$Departments[j] & Tournament$Positions[i] != Tournament$Positions[j]) {
+      Can_This_Matchup_Occur[Counter_1] <- T
+    } else {
+      Can_This_Matchup_Occur[Counter_1] <- F
+    }
+    Counter_1 <- Counter_1 + 1
+  }
+}
+Possible_Matchups_Data_Frame <- data.frame(Matchup, Opponent_1, Opponent_2, Can_This_Matchup_Occur)
+Matrix_of_Possible_Matchups <- matrix(0, nrow = length(Tournament$Participants), ncol = length(Tournament$Participants))
+Matrix_of_Possible_Matchups[lower.tri(Matrix_of_Possible_Matchups, diag = FALSE)] <- Possible_Matchups_Data_Frame$Can_This_Matchup_Occur
+Matrix_of_Possible_Matchups <- t(Matrix_of_Possible_Matchups)
+Matrix_of_Possible_Matchups[lower.tri(Matrix_of_Possible_Matchups, diag = FALSE)] <- Possible_Matchups_Data_Frame$Can_This_Matchup_Occur
+rownames(Matrix_of_Possible_Matchups) <- colnames(Matrix_of_Possible_Matchups) <- Tournament$Participants
+Best_Matrix_of_Possible_Matchups <- Matrix_of_Possible_Matchups
+
+# The following code assigns opponents such that no one from the same department will play each other (we would do this if the first scenario were not possible).
+Matchup <- NULL
+Opponent_1 <- NULL
+Opponent_2 <- NULL
+Can_This_Matchup_Occur <- NULL
+Counter_1 <- 1
+for (i in seq_len(nrow(Tournament) - 1)) {
+  for (j in (i + 1):nrow(Tournament)) {
+    Matchup[Counter_1] <- paste(Tournament$Participants[i], "versus", Tournament$Participants[j])
+    Opponent_1[Counter_1] <- Tournament$Participants[i]
+    Opponent_2[Counter_1] <- Tournament$Participants[j]
+    if (Tournament$Departments[i] != Tournament$Departments[j]) {
+      Can_This_Matchup_Occur[Counter_1] <- T
+    } else {
+      Can_This_Matchup_Occur[Counter_1] <- F
+    }
+    Counter_1 <- Counter_1 + 1
+  }
+}
+Possible_Matchups_Data_Frame <- data.frame(Matchup, Opponent_1, Opponent_2, Can_This_Matchup_Occur)
+Matrix_of_Possible_Matchups <- matrix(0, nrow = length(Tournament$Participants), ncol = length(Tournament$Participants))
+Matrix_of_Possible_Matchups[lower.tri(Matrix_of_Possible_Matchups, diag = FALSE)] <- Possible_Matchups_Data_Frame$Can_This_Matchup_Occur
+Matrix_of_Possible_Matchups <- t(Matrix_of_Possible_Matchups)
+Matrix_of_Possible_Matchups[lower.tri(Matrix_of_Possible_Matchups, diag = FALSE)] <- Possible_Matchups_Data_Frame$Can_This_Matchup_Occur
+rownames(Matrix_of_Possible_Matchups) <- colnames(Matrix_of_Possible_Matchups) <- Tournament$Participants
+Second_Best_Matrix_of_Possible_Matchups <- Matrix_of_Possible_Matchups
+
+# The following code assigns opponents with no restrictions  (we would do this if the first two scenarios were not possible).
+Matchup <- NULL
+Opponent_1 <- NULL
+Opponent_2 <- NULL
+Can_This_Matchup_Occur <- NULL
+Counter_1 <- 1
+for (i in seq_len(nrow(Tournament) - 1)) {
+  for (j in (i + 1):nrow(Tournament)) {
+    Matchup[Counter_1] <- paste(Tournament$Participants[i], "versus", Tournament$Participants[j])
+    Opponent_1[Counter_1] <- Tournament$Participants[i]
+    Opponent_2[Counter_1] <- Tournament$Participants[j]
+    if (TRUE) {
+      Can_This_Matchup_Occur[Counter_1] <- T
+    } else {
+      Can_This_Matchup_Occur[Counter_1] <- F
+    }
+    Counter_1 <- Counter_1 + 1
+  }
+}
+Possible_Matchups_Data_Frame <- data.frame(Matchup, Opponent_1, Opponent_2, Can_This_Matchup_Occur)
+Matrix_of_Possible_Matchups <- matrix(0, nrow = length(Tournament$Participants), ncol = length(Tournament$Participants))
+Matrix_of_Possible_Matchups[lower.tri(Matrix_of_Possible_Matchups, diag = FALSE)] <- Possible_Matchups_Data_Frame$Can_This_Matchup_Occur
+Matrix_of_Possible_Matchups <- t(Matrix_of_Possible_Matchups)
+Matrix_of_Possible_Matchups[lower.tri(Matrix_of_Possible_Matchups, diag = FALSE)] <- Possible_Matchups_Data_Frame$Can_This_Matchup_Occur
+rownames(Matrix_of_Possible_Matchups) <- colnames(Matrix_of_Possible_Matchups) <- Tournament$Participants
+Third_Best_Matrix_of_Possible_Matchups <- Matrix_of_Possible_Matchups
+
+# Let's put all three of these matrices into one list.
+(List_of_Matchup_Possibility_Matrices <- list(Best_Matrix_of_Possible_Matchups = Best_Matrix_of_Possible_Matchups, Second_Best_Matrix_of_Possible_Matchups = Second_Best_Matrix_of_Possible_Matchups, Third_Best_Matrix_of_Possible_Matchups = Third_Best_Matrix_of_Possible_Matchups))
+
+```
+
+### Making Sure Assigning Opponents is Possible
+
+Now that we know which matchups can happen based on our conditions, we can narrow our potential matchups down even more until every person is assigned to play only (and exactly) three other people. We must ensure three things for this to be possible: that there are a minimum of 4 participants, that the row sums and the column sums for each of these matrices is greater than or equal to three, and that there are an even number of participants. We need an even number of participants in order for it to be possible for each participant to play exactly 3 games against 3 different people. The reason for this can be explained based on the matrices generated by the last chunk of R code. For any square matrix, there are an equal number of entries above and below the diagonal, and thus the total number of entries above and below the diagonal must be even. The goal is to create a matrix that contains exactly three ones in each row and three ones in each column; the rest of the entries are zeroes. Thus, all row sums and column sums will be equal to 3. Since these matrices must be symmetrical as well, they must, by definition, contain an equal number of ones above and below the diagonal. For a square matrix with even dimensions, if each row and column contains exactly 3 ones, there will be an even number of ones in the whole matrix, and this can be split up evenly between the entries above the diagonal and the entries below the diagonal. For a square matrix with odd dimensions, if each row and column contains exactly 3 ones, there will be an odd number of ones in the whole matrix, and this cannot be split up evenly between the entries above the diagonal and the entries below the diagonal. Therefore, with an odd number of participants, it is impossible to assign everyone unique opponents if an odd number of games are to be played. Fortunately, I will be available to play or to not play based on how many people sign up for the tournament.
+
+```{r}
+
+# Let's check to see if it is be possible to assign opponents based on these conditions.
+lapply(List_of_Matchup_Possibility_Matrices, function (x) {
+  Condition_1 <- if (any(rowSums(x) < 3 | any(colSums(x) < 3))) {
+    "Unfortunately, there are not enough possible matchups to assign opponents based on this condition"
+  } else {
+    "Fortunately, there are enough possible matchups to assign opponents based on this condition"
+  }
+  Condition_2 <- if (nrow(x) %% 2 != 0 | ncol(x) %% 2 != 0) {
+    "Unfortunately, there are an odd number of participants"
+  } else {
+    "Fortunately, there are an even number of participants"
+  }
+  Condition_3 <- if (nrow(x) <= 3 | ncol(x) <= 3) {
+    "Unfortunately, there are not enough participants"
+  } else {
+    "Fortunately, there are enough participants"
+  }
+  c(Condition_1, Condition_2, Condition_3)
+})
+
+```
+
+### Narrowing Down All Possible Matchups to Three Matchups Per Person
+
+To determine which matchups are possible, I first determine all of the possible combinations of 3 ones in each row in each matrix. I would normally do this with the `expand.grid` function (after which I'd remove any matrices that contain and row sums or any column sums that are greater than three or that are not symmetrical), but the `expand.grid` function does not work on such large lists and vectors. Therefore, instead of using the `expand.grid` function, I combine all of the first rows with all of the second rows to create every distinct possibility of these combinations. I then check to see if any column sums are greater than three or if any matrices contain the same entry in the ith row and the jth column that they do in the jth row and the ith column (which would preclude them from being symmetrical once all rows are added). I remove any matrices that meet these conditions, and then I add all of the third rows to each of these matrices to again create every distinct possibility of these combinations. I again check to see if any matrices contain column sums that are greater than three or that could not be symmetrical once all rows are added. I continue this process using a recursive function until the last rows are added. When the last rows are added, I have all possible combinations of matchups. As a warning, depending on how many participants are in the tournament, it could take a long time for the last chunk of code, which creates all of the possible matchup matrices, to run.
+
+```{r}
+
+# Let's determine which sombinations of positions are possible to leave as ones in the original matrices.
+Possible_Positions_for_Ones <- lapply(List_of_Matchup_Possibility_Matrices, function (x) {
+  lapply(seq_len(nrow(x)), function (y) {
+    as.list(as.data.frame(combn(which(x[y, ] == 1), 3)))
+  })
+})
+
+# Based on these positions, let's create new matrix rows for each matrix that reflect all the possibilities and save the output in a nested list.
+Possible_Combinations <- lapply(Possible_Positions_for_Ones, function (w) {
+  lapply(seq_len(length(w)), function (x) {
+    lapply(seq_len(length(w[[x]])), function (y) {
+      z <- rep(0, ncol(Best_Matrix_of_Possible_Matchups))
+      z[w[[x]][[y]]] <- 1
+      z
+    })
+  })
+})
+Possible_Combinations <- lapply(Possible_Combinations, function (x) {
+  x <- setNames(x, paste("Row", seq_len(length(x)), sep = "_"))
+  x <- lapply(x, function (y) {
+    setNames(y, paste("Combination", seq_len(length(y)), sep = "_"))
+  })
+})
+
+# Let's create all possible matchup matrices. First, we'll determine each possible combination of ones and zeroes for each row in each matrix.
+All_Possible_Rows <- lapply(Possible_Positions_for_Ones, function (z) {
+  lapply(z, function (y) {
+    w <- lapply(y, function (x) {
+      q <- rep(0, ncol(Best_Matrix_of_Possible_Matchups))
+      q[x] <- 1
+      t(as.matrix(q))
+    })
+    names(w) <- NULL
+    w
+  })
+})
+
+# Then, we'll add second rows of each matrix to each first row from the same matrix such that all possible first- and second-row possible combinations are obtained.
+All_Possible_Matrices <- lapply(All_Possible_Rows, function (x) {
+  lapply(seq_len(length(x[[1]])), function (i) {
+    lapply(seq_len(length(x[[2]])), function (j) {
+      rbind(x[[1]][[i]], x[[2]][[j]])
+    })
+  })
+})
+
+# Let's format these matrices so we can easily work with them.
+All_Possible_Matrices <- lapply(All_Possible_Matrices, function (a) {
+  unlist(lapply(a, function (x) {
+    lapply(x, function (y) {
+      z <- t(as.matrix(apply(as.data.frame(y), 1, unlist)))
+      rownames(z) <- colnames(z) <- NULL
+      z
+    })
+  }), recursive = F)
+})
+
+# Let's remove all matrices that cannot possibly be symmetrical once they are complete.
+All_Possible_Matrices <- lapply(All_Possible_Matrices, function (y) {
+  lapply(y, function (x) {
+    if (!isSymmetric(x[seq_len(nrow(x)), seq_len(nrow(x))])) {
+      x <- NULL
+    } else {
+      x
+    }
+  })
+})
+All_Possible_Matrices <- lapply(All_Possible_Matrices, function (y) {
+  y[sapply(y, function (x) {
+    !is.null(x)
+  })]
+})
+
+# Let's figure out which row to add next.
+New_Numbers_of_Rows <- lapply(All_Possible_Matrices, function (y) {
+  unique(sapply(y, function (x) {
+    nrow(x)
+  })) + 1
+})
+
+# Let's create a recursive function that will add all of the remaining rows. We'll use the same pattern in this function that we've already used to add the second rows to the first rows, with the added condition that we will remove any matrices whose column sums are greater than 3.
+Create_Matchup_Matrices <- function (n, p, k) {
+  if (!(class(n) %in% c("numeric", "integer"))) {
+    stop ("n must be of class 'integer' or class 'numeric'.")
+  }
+  if (class(n) == "integer") {
+    n <- as.numeric(n)
+  }
+  if (n %% 1 != 0 | n <= 0) {
+    stop ("n must be a positive integer.")
+  }
+  if (n > length(k) | n < 3) {
+    stop ("n must be between 3 and the total number of participants, inclusive.")
+  }
+  if (n %in% 3:(length(k) - 1)) {
+    p <- unlist(lapply(seq_len(length(p)), function (i) {
+      lapply(seq_len(length(k[[n]])), function (j) {
+        rbind(p[[i]], k[[n]][[j]])
+      })
+    }), recursive = F)
+    p <- lapply(p, function (x) {
+      if (any(colSums(x) > 3) | !isSymmetric(x[seq_len(nrow(x)), seq_len(nrow(x))])) {
+        x <- NULL
+      } else {
+        x
+      }
+    })
+    p <- p[sapply(p, function (x) {
+      !is.null(x)
+    })]
+    Create_Matchup_Matrices(n + 1, p, k)
+  } else
+  if (n == length(k)) {
+    p <- unlist(lapply(seq_len(length(p)), function (i) {
+      lapply(seq_len(length(k[[n]])), function (j) {
+        rbind(p[[i]], k[[n]][[j]])
+      })
+    }), recursive = F)
+    p <- lapply(p, function (x) {
+      if (any(colSums(x) > 3) | !isSymmetric(x[seq_len(nrow(x)), seq_len(nrow(x))])) {
+        x <- NULL
+      } else {
+        x
+      }
+    })
+    p <- p[sapply(p, function (x) {
+      !is.null(x)
+    })]
+    return (p)
+  }
+}
+
+# Now, let's use this function on our possible matchup data.
+(Final_Matchup_Matrices <- mapply(function (g, h, l) {
+  Create_Matchup_Matrices(n = g, p = h, k = l)
+}, g = New_Numbers_of_Rows, h = All_Possible_Matrices, l = All_Possible_Rows, SIMPLIFY = F))
+
+```
+
+### Choosing a Matrix of Cribbage Matchups at Random
+
+Finally, I then one of the matchup matrices from the best possible condition that's met (i.e., if any of the final matrices were generated from the initial condition where nobody from the same department or of the same rank would be allowed to play each other, I would prioritize choosing one of those matrices) using the `sample` function.
+
+```{r}
+
+Randomly_Chosen_Matrices <- lapply(seq_len(length(Final_Matchup_Matrices)), function (x) {
+  if (!is.null(x)) {
+    Final_Matchup_Matrices[[x]][[sample(seq_len(length(Final_Matchup_Matrices[[x]])), size = 1)]]
+  } else {
+    cat("There are no possible matchup matrices using this condition.")
+  }
+})
+Final_Matchup_Matrix <- Randomly_Chosen_Matrices[[min(sapply(Randomly_Chosen_Matrices, is.matrix))]]
+rownames(Final_Matchup_Matrix) <- colnames(Final_Matchup_Matrix) <- Tournament$Participants
+Final_Matchup_Data_Frame <- as.data.frame(Final_Matchup_Matrix)
+(Final_Opponent_Assignments <- lapply(Final_Matchup_Data_Frame, function (x) {
+  rownames(Final_Matchup_Data_Frame)[which(x == 1)]
+}))
+
+```
+
+### Final Words
+
+I'm so happy that I finally have an R code that will randomly assign opponents for the cribbage tournament.
